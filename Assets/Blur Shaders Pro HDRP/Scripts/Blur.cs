@@ -5,13 +5,15 @@
     using UnityEngine.Rendering.HighDefinition;
     using GraphicsFormat = UnityEngine.Experimental.Rendering.GraphicsFormat;
     using System;
-    using System.Collections.Generic;
 
     [Serializable, VolumeComponentMenu("Post-processing/Blur Shaders Pro (HDRP)/Blur")]
     public sealed class Blur : CustomPostProcessVolumeComponent, IPostProcessComponent
     {
         [Tooltip("Blur Strength")]
         public ClampedIntParameter strength = new ClampedIntParameter(1, 1, 500);
+
+        [Tooltip("Type of blur. Gaussian blur is slightly more expensive, but higher fidelity.")]
+        public BlurTypeParameter blurType = new BlurTypeParameter(BlurType.Gaussian);
 
         private RTHandle blurTexHandle = null;
 
@@ -76,11 +78,22 @@
             m_Material.SetInt("_KernelSize", strength.value);
             m_Material.SetFloat("_Spread", strength.value / 7.5f);
 
-            m_Material.SetTexture("_SourceTexture", source);
-            HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 0);
+            if(blurType.value == BlurType.Gaussian)
+            {
+                m_Material.SetTexture("_SourceTexture", source);
+                HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 0);
 
-            m_Material.SetTexture("_InputTexture", blurTexHandle);
-            HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 1);
+                m_Material.SetTexture("_InputTexture", blurTexHandle);
+                HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 1);
+            }
+            else if(blurType.value == BlurType.Box)
+            {
+                m_Material.SetTexture("_SourceTexture", source);
+                HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 2);
+
+                m_Material.SetTexture("_InputTexture", blurTexHandle);
+                HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 3);
+            }
         }
 
         public override void Cleanup()
@@ -88,5 +101,17 @@
             ReleaseTextures();
             CoreUtils.Destroy(m_Material);
         }
+    }
+
+    [Serializable]
+    public enum BlurType
+    {
+        Gaussian, Box
+    }
+
+    [Serializable]
+    public sealed class BlurTypeParameter : VolumeParameter<BlurType>
+    {
+        public BlurTypeParameter(BlurType value, bool overrideState = false) : base(value, overrideState) { }
     }
 }

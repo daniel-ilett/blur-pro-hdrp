@@ -55,7 +55,7 @@
     {
         Pass
         {
-            Name "Horizontal"
+            Name "HorizontalGaussian"
 
             ZWrite Off
             ZTest Always
@@ -99,7 +99,7 @@
 
 		Pass
         {
-            Name "Vertical"
+            Name "VerticalGaussian"
 
             ZWrite Off
             ZTest Always
@@ -128,6 +128,88 @@
 						kernelSum += gauss;
 						uv = input.texcoord + float2(0, _InputTexture_TexelSize.y * y);
 						col += gauss * SAMPLE_TEXTURE2D(_InputTexture, s_linear_clamp_sampler, uv).rgb;
+					}
+
+					col /= kernelSum;
+
+					return float4(col, 1.0f);
+				}
+            ENDHLSL
+        }
+
+		Pass
+        {
+            Name "HorizontalBox"
+
+            ZWrite Off
+            ZTest Always
+            Blend Off
+            Cull Off
+
+            HLSLPROGRAM
+                #pragma fragment FragHorizontal
+                #pragma vertex Vert
+
+				float4 FragHorizontal(Varyings input) : SV_Target
+				{
+					UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+					uint2 positionSS = input.texcoord * _ScreenSize.xy;
+
+					//return LOAD_TEXTURE2D_X(_SourceTexture, positionSS);
+
+					float3 col = float3(0.0f, 0.0f, 0.0f);
+					float kernelSum = 0.0f;
+
+					int upper = ((_KernelSize - 1) / 2);
+					int lower = -upper;
+
+					float2 uv;
+
+					for (int x = lower; x <= upper; ++x)
+					{
+						kernelSum++;
+						uv = positionSS + int2(x, 0);
+						col += LOAD_TEXTURE2D_X(_SourceTexture, uv).rgb;
+					}
+
+					col /= kernelSum;
+
+					return float4(col, 1.0f);
+				}
+            ENDHLSL
+        }
+
+		Pass
+        {
+            Name "VerticalBox"
+
+            ZWrite Off
+            ZTest Always
+            Blend Off
+            Cull Off
+
+            HLSLPROGRAM
+                #pragma fragment FragVertical
+                #pragma vertex Vert
+
+				float4 FragVertical(Varyings input) : SV_Target
+				{
+					UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+					float3 col = float3(0.0f, 0.0f, 0.0f);
+					float kernelSum = 0.0f;
+
+					int upper = ((_KernelSize - 1) / 2);
+					int lower = -upper;
+
+					float2 uv;
+
+					for (int y = lower; y <= upper; ++y)
+					{
+						kernelSum++;
+						uv = input.texcoord + float2(0, _InputTexture_TexelSize.y * y);
+						col += SAMPLE_TEXTURE2D(_InputTexture, s_linear_clamp_sampler, uv).rgb;
 					}
 
 					col /= kernelSum;
