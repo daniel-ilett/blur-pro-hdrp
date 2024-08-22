@@ -40,6 +40,7 @@
 	float4 _InputTexture_TexelSize;
 	uint _KernelSize;
 	float _Spread;
+	uint _BlurStepSize;
 
 	static const float E = 2.71828f;
 
@@ -82,7 +83,7 @@
 
 					float2 uv;
 
-					for (int x = lower; x <= upper; ++x)
+					for (int x = lower; x <= upper; x += _BlurStepSize)
 					{
 						float gauss = gaussian(x);
 						kernelSum += gauss;
@@ -122,7 +123,7 @@
 
 					float2 uv;
 
-					for (int y = lower; y <= upper; ++y)
+					for (int y = lower; y <= upper; y += _BlurStepSize)
 					{
 						float gauss = gaussian(y);
 						kernelSum += gauss;
@@ -166,7 +167,7 @@
 
 					float2 uv;
 
-					for (int x = lower; x <= upper; ++x)
+					for (int x = lower; x <= upper; x += _BlurStepSize)
 					{
 						kernelSum++;
 						uv = positionSS + int2(x, 0);
@@ -205,7 +206,7 @@
 
 					float2 uv;
 
-					for (int y = lower; y <= upper; ++y)
+					for (int y = lower; y <= upper; y += _BlurStepSize)
 					{
 						kernelSum++;
 						uv = input.texcoord + float2(0, _InputTexture_TexelSize.y * y);

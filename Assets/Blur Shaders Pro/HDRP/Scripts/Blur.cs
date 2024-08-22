@@ -12,6 +12,9 @@
         [Tooltip("Blur Strength")]
         public ClampedIntParameter strength = new ClampedIntParameter(1, 1, 500);
 
+        [Tooltip("Higher values will skip pixels during blur passes. Increase for better performance.")]
+        public ClampedIntParameter blurStepSize = new ClampedIntParameter(1, 1, 16);
+
         [Tooltip("Type of blur. Gaussian blur is slightly more expensive, but higher fidelity.")]
         public BlurTypeParameter blurType = new BlurTypeParameter(BlurType.Gaussian);
 
@@ -77,22 +80,26 @@
 
             m_Material.SetInt("_KernelSize", strength.value);
             m_Material.SetFloat("_Spread", strength.value / 7.5f);
+            m_Material.SetInteger("_BlurStepSize", blurStepSize.value);
 
-            if(blurType.value == BlurType.Gaussian)
+            if (strength.value > blurStepSize.value * 2)
             {
-                m_Material.SetTexture("_SourceTexture", source);
-                HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 0);
+                if (blurType.value == BlurType.Gaussian)
+                {
+                    m_Material.SetTexture("_SourceTexture", source);
+                    HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 0);
 
-                m_Material.SetTexture("_InputTexture", blurTexHandle);
-                HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 1);
-            }
-            else if(blurType.value == BlurType.Box)
-            {
-                m_Material.SetTexture("_SourceTexture", source);
-                HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 2);
+                    m_Material.SetTexture("_InputTexture", blurTexHandle);
+                    HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 1);
+                }
+                else if (blurType.value == BlurType.Box)
+                {
+                    m_Material.SetTexture("_SourceTexture", source);
+                    HDUtils.DrawFullScreen(cmd, m_Material, blurTexHandle, shaderPassId: 2);
 
-                m_Material.SetTexture("_InputTexture", blurTexHandle);
-                HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 3);
+                    m_Material.SetTexture("_InputTexture", blurTexHandle);
+                    HDUtils.DrawFullScreen(cmd, m_Material, destination, shaderPassId: 3);
+                }
             }
         }
 
